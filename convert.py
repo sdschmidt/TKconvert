@@ -1,9 +1,17 @@
+# Convert Tae Kim's guide to japanese 
+#
+# compiling with errors on pLaTex->dvipdfm
+#
+# initial version 0.0
+# by SDS
 import requests
 import re
 from lxml import html, etree
-from io import StringIO, BytesIO
 
+# base uri
 base = 'http://www.guidetojapanese.org'
+# where to start
+link = '/learn/complete/stateofbeing'
 
 def getPage(uri) :
     page = requests.get(uri)
@@ -17,15 +25,16 @@ def getNext(page) :
     return 0
 
 def parsePage(page) : # html -> latex
+    text = ''
     tree = html.fromstring(page.content)
-    #print tree.xpath('//h1/text()')
+    heading = tree.xpath('//h1/text()')
+    text += '\\section{'+heading[0]+'}'
     #print tree.xpath('//h2/text()')
     elist = tree.xpath('//div[contains(@class, "content")]/child::*')
-    
     for element in elist :
-        getDecendents(element)
+        text += getDecendents(element)
         # for each child check if text otherwise get grandchildren
-    return 0
+    return text
 
 def getChildren(node) : 
     if type(node) is html.HtmlElement :
@@ -34,41 +43,80 @@ def getChildren(node) :
     return 0
 
 def getDecendents(node):
+    text = ''
     if type(node) is html.HtmlElement :
-        print "START "+node.tag
+        text += getTagStart(node.tag)
         children = getChildren(node)
         for child in children :
-            getDecendents(child)
-        print "END "+node.tag
+            text += getDecendents(child)
+        text += getTagEnd(node.tag)
     else :
-        print node # has to be a text node
+        text += node.replace('\n', '') # has to be a text node
+    return text
+
+def isFollowUp(node):
+    return True
+
+def getTagStart(tag):
+    if tag is 'p' :
+        tagStart = "\\\\\n"
+    elif tag is 'div' :
+        tagStart = ''
+    elif tag == "br" :
+        tagStart = '\n\n'
+    elif tag == "h3" :
+        tagStart = '\n\\subsubsection{'
+    elif tag == "h2" :
+        tagStart = '\n\\subsection{'
+    elif tag == "em":
+        tagStart = ''
+    elif tag == "ul":
+        tagStart = '\n\\begin{itemize}\n'
+    elif tag == "ol":
+        tagStart = '\n\\begin{enumerate}\n'
+    elif tag == "li":
+        tagStart = '\n\\item '
+    else :
+        tagStart = ""
+    return tagStart
+
+def getTagEnd(tag):
+    if tag is 'p' :
+        tagEnd = ''
+    elif tag == 'br':
+        tagEnd = ''
+    elif tag == "h3" :
+        tagEnd = '}\n'
+    elif tag == "h2" :
+        tagEnd = '}\n'
+    elif tag == "em":
+        tagEnd = ''
+    elif tag == "ul":
+        tagEnd = '\n\\end{itemize}\n'
+    elif tag == "ol":
+        tagEnd = '\n\\end{enumerate}\n'
+    elif tag == "li":
+        tagEnd = ""
+    else :
+        tagEnd = ""
+    return tagEnd
+
+def getTagText(tag) :
     return 0
 
-
-class EchoTarget(object) :
-    def start(self, tag, attrib):
-        print("start %s %r" % (tag, dict(attrib)))
-    def end(self, tag):
-        print("end %s" % tag)
-    def data(self, data):
-        print("data %r" % data)
-    def comment(self, text):
-        print("comment %s" % text)
-    def close(self):
-        print("close")
-        return "closed!"
-
-
-link = '/learn/complete/stateofbeing'
 uri = base+link
 
 i = 0
-#while link != 0 :
-i+=1
-uri = base+link
-print uri
-page = getPage(uri)
-parsePage(page)
-link = getNext(page)
+text = '\\documentclass[a4paper]{article}\n\n\\begin{document}\n\n'
+while link != 0 :
+    i+=1
+    uri = base+link
+    page = getPage(uri)
+    text += parsePage(page)
+    link = getNext(page)
+    print i
+    print uri
 
-print i
+text += '\n\n\\end{document}'
+with open('main.tex', 'a') as file : 
+    file.write(text.encode("UTF-8"))

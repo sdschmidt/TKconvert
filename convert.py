@@ -20,23 +20,30 @@ def parsePage(page) : # html -> latex
     tree = html.fromstring(page.content)
     #print tree.xpath('//h1/text()')
     #print tree.xpath('//h2/text()')
-    elist = tree.xpath('//div[contains(@class, "content")]/descendant::*/text()')
-    text = ''
+    elist = tree.xpath('//div[contains(@class, "content")]/child::*')
+    
     for element in elist :
-        tag = element.getparent().tag
-        element.replace(
-        if tag == 'h2':
-            text += '\n\n>> '+element+' << \n\n '
-        elif tag == 'h3':
-            text += '\n\n>> '+element+'\n\n '
-        elif tag == 'p' :
-            text += '\n    ' + element
-        elif tag == 'li' :
-            text += ' ** ' + element
-        else :
-            text += element
-    print text
+        getDecendents(element)
+        # for each child check if text otherwise get grandchildren
     return 0
+
+def getChildren(node) : 
+    if type(node) is html.HtmlElement :
+        children = node.xpath('child::node()')
+        return children
+    return 0
+
+def getDecendents(node):
+    if type(node) is html.HtmlElement :
+        print "START "+node.tag
+        children = getChildren(node)
+        for child in children :
+            getDecendents(child)
+        print "END "+node.tag
+    else :
+        print node # has to be a text node
+    return 0
+
 
 class EchoTarget(object) :
     def start(self, tag, attrib):

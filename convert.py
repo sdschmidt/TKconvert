@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 # Convert Tae Kim's guide to japanese 
 #
 # compiling with errors on pLaTex->dvipdfm
@@ -11,7 +13,7 @@ from lxml import html, etree
 # base uri
 base = 'http://www.guidetojapanese.org'
 # where to start
-link = '/learn/complete/stateofbeing'
+link = '/learn/complete/'
 
 def getPage(uri) :
     page = requests.get(uri)
@@ -59,7 +61,7 @@ def isFollowUp(node):
 
 def getTagStart(tag):
     if tag is 'p' :
-        tagStart = "\\\\\n"
+        tagStart = "\n"
     elif tag is 'div' :
         tagStart = ''
     elif tag == "br" :
@@ -82,7 +84,7 @@ def getTagStart(tag):
 
 def getTagEnd(tag):
     if tag is 'p' :
-        tagEnd = ''
+        tagEnd = '\\\\'
     elif tag == 'br':
         tagEnd = ''
     elif tag == "h3" :
@@ -107,8 +109,12 @@ def getTagText(tag) :
 uri = base+link
 
 i = 0
-text = '\\documentclass[a4paper]{article}\n\n\\begin{document}\n\n'
-while link != 0 :
+
+text =  '\\documentclass[a4paper]{article}\n\n'
+text += '\\usepackage{CJKutf8}\n\n'
+text += '\\begin{document}\n\n'
+text += '\\begin{CJK}{UTF8}{min}\n\n'
+while link != 0 and i is not 10 :
     i+=1
     uri = base+link
     page = getPage(uri)
@@ -117,6 +123,14 @@ while link != 0 :
     print i
     print uri
 
-text += '\n\n\\end{document}'
-with open('main.tex', 'a') as file : 
-    file.write(text.encode("UTF-8"))
+text += '\n\n\end{CJK}\n\n\\end{document}'
+text = text.encode('utf8')
+text = text.replace('$','\$')
+text = text.replace('#','\#')
+text = text.replace('‹','LEFT')
+text = text.replace('›','RIGHT')
+text = text.replace('_','\_')
+text = text.replace('&','\&')
+with open('main.tex', 'w') as file : 
+    file.write(text)
+print 'file written'

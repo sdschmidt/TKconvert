@@ -53,8 +53,20 @@ def getDecendents(node):
             text += getDecendents(child)
         text += getTagEnd(node.tag)
     else :
-        text += node.replace('\n', '') # has to be a text node
+        text += maskTexChars(node.replace('\n', '')) # has to be a text node
     return text
+
+def maskTexChars(string) :
+    string = string.encode('utf8')
+    string = string.replace('$','\$')
+    string = string.replace('#','\#')
+    string = string.replace('‹','LEFT')
+    string = string.replace('›','RIGHT')
+    string = string.replace('_','\_')
+    string = string.replace('&','\&')
+    string = string.replace(']','\]')
+    string = string.replace('[','\[')
+    return string
 
 def isFollowUp(node):
     return True
@@ -65,7 +77,7 @@ def getTagStart(tag):
     elif tag is 'div' :
         tagStart = ''
     elif tag == "br" :
-        tagStart = '\n\n'
+        tagStart = '\\newline\n'
     elif tag == "h3" :
         tagStart = '\n\\subsubsection{'
     elif tag == "h2" :
@@ -78,13 +90,19 @@ def getTagStart(tag):
         tagStart = '\n\\begin{enumerate}\n'
     elif tag == "li":
         tagStart = '\n\\item '
+    elif tag == "table" :
+        tagStart = '\\begin{table}\n\\begin{tabularx}{\\textwidth}{Xlllllllllll}\n'
+    elif tag == "tr" :
+        tagStart = ''
+    elif tag == "td" :
+        tagStart = ''
     else :
         tagStart = ""
     return tagStart
 
 def getTagEnd(tag):
     if tag is 'p' :
-        tagEnd = '\\\\'
+        tagEnd = '\n\n'
     elif tag == 'br':
         tagEnd = ''
     elif tag == "h3" :
@@ -99,6 +117,12 @@ def getTagEnd(tag):
         tagEnd = '\n\\end{enumerate}\n'
     elif tag == "li":
         tagEnd = ""
+    elif tag == "table" :
+        tagEnd = '\\end{tabularx}\n\\end{table}\n'
+    elif tag == "tr" :
+        tagEnd = ' \\\\\n'
+    elif tag == "td" :
+        tagEnd = " &" 
     else :
         tagEnd = ""
     return tagEnd
@@ -111,10 +135,11 @@ uri = base+link
 i = 0
 
 text =  '\\documentclass[a4paper]{article}\n\n'
+text += '\\usepackage{tabularx}\n'
 text += '\\usepackage{CJKutf8}\n\n'
 text += '\\begin{document}\n\n'
 text += '\\begin{CJK}{UTF8}{min}\n\n'
-while link != 0 and i is not 10 :
+while link != 0 :
     i+=1
     uri = base+link
     page = getPage(uri)
@@ -124,13 +149,7 @@ while link != 0 and i is not 10 :
     print uri
 
 text += '\n\n\end{CJK}\n\n\\end{document}'
-text = text.encode('utf8')
-text = text.replace('$','\$')
-text = text.replace('#','\#')
-text = text.replace('‹','LEFT')
-text = text.replace('›','RIGHT')
-text = text.replace('_','\_')
-text = text.replace('&','\&')
+
 with open('main.tex', 'w') as file : 
     file.write(text)
 print 'file written'
